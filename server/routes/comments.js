@@ -1,10 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Comment = require('../models/Comment');
-const { authMiddleware } = require('../middleware/authMiddleware');
 const Post = require('../models/Post');
 
-router.use(authMiddleware);
 
 // Like a comment
 router.post('/:id/like', async (req, res) => {
