@@ -27,7 +27,6 @@ const UserHome = () => {
 
     useEffect(() => {
         if (error) {
-            // Clear error after 5 seconds
             const timer = setTimeout(() => {
                 setError(null);
             }, 5000);
@@ -39,18 +38,24 @@ const UserHome = () => {
         if (activeTab === 'approved') {
             const delayDebounceFn = setTimeout(() => {
                 fetchPosts();
-            }, 300); // Debounce search for 300ms
+            }, 300);
 
             return () => clearTimeout(delayDebounceFn);
         }
     }, [searchTag, activeTab]);
+
+    const handleUnauthorized = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userId');
+        navigate('/login');
+    };
 
     const fetchPosts = async () => {
         try {
             const token = localStorage.getItem('token');
             
             if (!token) {
-                navigate('/login');
+                handleUnauthorized();
                 return;
             }
 
@@ -71,6 +76,11 @@ const UserHome = () => {
                     'Content-Type': 'application/json'
                 }
             });
+
+            if (response.status === 401) {
+                handleUnauthorized();
+                return;
+            }
 
             if (!response.ok) {
                 const errorData = await response.json();
@@ -99,10 +109,15 @@ const UserHome = () => {
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                ...postData,
-                user: userId  
-            })
+                    ...postData,
+                    user: userId  
+                })
             });
+
+            if (response.status === 401) {
+                handleUnauthorized();
+                return;
+            }
 
             if (!response.ok) {
                 throw new Error('Failed to create post');
@@ -110,8 +125,8 @@ const UserHome = () => {
 
             const newPost = await response.json();
             setIsModalOpen(false);
-            setActiveTab('pending'); // Switch to pending posts tab
-            fetchPosts(); // Refresh the posts list
+            setActiveTab('pending');
+            fetchPosts();
         } catch (error) {
             console.error('Fetch error:', error);
             setError(error.message);
@@ -128,6 +143,11 @@ const UserHome = () => {
                     'Content-Type': 'application/json'
                 }
             });
+
+            if (response.status === 401) {
+                handleUnauthorized();
+                return;
+            }
 
             if (!response.ok) {
                 throw new Error('Failed to like post');
@@ -150,6 +170,11 @@ const UserHome = () => {
                     'Content-Type': 'application/json'
                 }
             });
+
+            if (response.status === 401) {
+                handleUnauthorized();
+                return;
+            }
 
             if (!response.ok) {
                 throw new Error('Failed to dislike post');
@@ -176,6 +201,11 @@ const UserHome = () => {
                     text: commentText
                 })
             });
+
+            if (response.status === 401) {
+                handleUnauthorized();
+                return;
+            }
 
             if (!response.ok) {
                 const errorData = await response.json();
@@ -204,6 +234,11 @@ const UserHome = () => {
                 }
             });
 
+            if (response.status === 401) {
+                handleUnauthorized();
+                return;
+            }
+
             if (!response.ok) {
                 throw new Error('Failed to delete post');
             }
@@ -226,6 +261,11 @@ const UserHome = () => {
                 },
                 body: JSON.stringify(editData)
             });
+
+            if (response.status === 401) {
+                handleUnauthorized();
+                return;
+            }
 
             if (!response.ok) {
                 const errorData = await response.json();

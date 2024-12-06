@@ -1,8 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const Post = require('../models/Post');
-const { authMiddleware, adminMiddleware } = require('../middleware/authMiddleware');
-router.use(authMiddleware);
 
 // Get all approved posts
 router.get('/approved', async (req, res) => {
@@ -201,99 +199,5 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
-// Approve a post
-router.post('/:id/approve', authMiddleware, async (req, res) => {
-    try {
-        if (req.user.role !== 'admin') {
-            return res.status(403).json({ error: 'Only admins can approve posts' });
-        }
-
-        const post = await Post.findById(req.params.id);
-        if (!post) {
-            return res.status(404).json({ error: 'Post not found' });
-        }
-
-        if (post.status === 'approved') {
-            return res.status(400).json({ error: 'Post is already approved' });
-        }
-
-        post.status = 'approved';
-        await post.save();
-        const updatedPost = await Post.findById(post._id)
-            .populate('user', 'name')
-            .populate({
-                path: 'comments',
-                populate: {
-                    path: 'user',
-                    select: 'name'
-                }
-            });
-
-        res.json(updatedPost);
-    } catch (error) {
-        console.error('Approve post error:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Reject a post
-router.post('/:id/reject', authMiddleware, async (req, res) => {
-    try {
-        
-        if (req.user.role !== 'admin') {
-            return res.status(403).json({ error: 'Only admins can reject posts' });
-        }
-        const post = await Post.findById(req.params.id);
-        if (!post) {
-            return res.status(404).json({ error: 'Post not found' });
-        }
-
-        if (post.status === 'rejected') {
-            return res.status(400).json({ error: 'Post is already rejected' });
-        }
-
-        post.status = 'rejected';
-        await post.save();
-        const updatedPost = await Post.findById(post._id)
-            .populate('user', 'name')
-            .populate({
-                path: 'comments',
-                populate: {
-                    path: 'user',
-                    select: 'name'
-                }
-            });
-
-        res.json(updatedPost);
-    } catch (error) {
-        console.error('Reject post error:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Get all pending posts (admin only)
-router.get('/pending', authMiddleware, async (req, res) => {
-    try {
-        if (req.user.role !== 'admin') {
-            return res.status(403).json({ error: 'Only admins can view all pending posts' });
-        }
-
-        const pendingPosts = await Post.find({ status: 'pending' })
-            .populate('user', 'name')
-            .populate({
-                path: 'comments',
-                populate: {
-                    path: 'user',
-                    select: 'name'
-                }
-            })
-            .sort({ createdAt: -1 });
-
-        res.json(pendingPosts);
-    } catch (error) {
-        console.error('Get pending posts error:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
 
 module.exports = router;

@@ -7,7 +7,7 @@ const connectDB = require('./config/db');
 require('./models/User');
 require('./models/Post');
 require('./models/Comment');
-require('./models/Admin');
+
 
 
 const { authMiddleware } = require('./middleware/authMiddleware');

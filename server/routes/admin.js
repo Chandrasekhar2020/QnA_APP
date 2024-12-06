@@ -23,7 +23,7 @@ router.get('/pending-posts', async (req, res) => {
     }
 });
 
-router.patch('/posts/:id/status', async (req, res) => {
+router.patch('/posts/:id', async (req, res) => {
     try {
         const { status } = req.body;
 
@@ -34,6 +34,7 @@ router.patch('/posts/:id/status', async (req, res) => {
         const post = await Post.findById(req.params.id);
         
         if (!post) {
+            
             return res.status(404).json({ error: 'Post not found' });
         }
 
@@ -63,6 +64,28 @@ router.patch('/posts/:id/status', async (req, res) => {
 
     } catch (error) {
         console.error('Update post status error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.delete('/posts/:id', async (req, res) => {
+    
+    try {
+        const post = await Post.findById(req.params.id);
+        
+        if (!post) {
+            return res.status(404).json({ error: 'Post not found' });
+        }
+
+        await Post.deleteOne({ _id: req.params.id });
+
+        res.json({
+            message: 'Post deleted successfully',
+            deletedPostId: req.params.id
+        });
+
+    } catch (error) {
+        console.error('Delete post error:', error);
         res.status(500).json({ error: error.message });
     }
 });
