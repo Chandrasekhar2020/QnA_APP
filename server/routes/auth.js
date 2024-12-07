@@ -3,6 +3,9 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const passport = require('passport');
+const { googleAuthCallback } = require('../controllers/authController');
+
 
 router.post('/signup', async (req, res) => {
     console.log('Signup request received:', req.body);
@@ -73,5 +76,19 @@ router.post('/login', async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+
+router.get('/google',
+    passport.authenticate('google', {
+        scope: ['profile', 'email']
+    })
+);
+
+router.get('/google/callback',
+    passport.authenticate('google', { 
+        session: false,
+        failureRedirect: '/login'
+    }),
+    googleAuthCallback
+);
 
 module.exports = router;

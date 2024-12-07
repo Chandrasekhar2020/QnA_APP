@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { FaEnvelope, FaLock, FaExclamationCircle } from 'react-icons/fa';
+import GoogleLoginButton from './GoogleLoginButton';
+import authService from '../services/authService';
+import { handleGoogleAuthCallback } from '../utils/auth';
 import '../styles/Auth.css';
 
 const UserLogin = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [formData, setFormData] = useState({
         email: '',
         password: ''
@@ -12,35 +16,45 @@ const UserLogin = () => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
+    useEffect(() => {
+        // Handle OAuth callback
+        const handleCallback = async () => {
+            try {
+                const result = await handleGoogleAuthCallback(location.search);
+                if (result) {
+                    navigate(`/users/${result.userId}/home`);
+                }
+            } catch (error) {
+                setError(error.message);
+            }
+        };
+
+        if (location.search) {
+            handleCallback();
+        }
+    }, [location, navigate]);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
         setError('');
 
         try {
-            const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/login`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Login failed');
-            }
-
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('userId', data.userId);
-            localStorage.setItem('userRole', data.role);
+            const data = await authService.login(formData.email, formData.password);
             navigate(`/users/${data.userId}/home`);
         } catch (err) {
             setError(err.message);
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prevState => ({
+            ...prevState,
+            [name]: value
+        }));
     };
 
     return (
@@ -64,9 +78,10 @@ const UserLogin = () => {
                             <FaEnvelope />
                             <input
                                 type="email"
+                                name="email"
                                 placeholder="Email Address"
                                 value={formData.email}
-                                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                onChange={handleInputChange}
                                 required
                             />
                         </div>
@@ -77,19 +92,16 @@ const UserLogin = () => {
                             <FaLock />
                             <input
                                 type="password"
+                                name="password"
                                 placeholder="Password"
                                 value={formData.password}
-                                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                                onChange={handleInputChange}
                                 required
                             />
                         </div>
                     </div>
 
-                    <div className="forgot-password">
-                        <Link to="/forgot-password" className="auth-link">
-                            Forgot your password?
-                        </Link>
-                    </div>
+                   
 
                     <button 
                         type="submit" 
@@ -98,6 +110,12 @@ const UserLogin = () => {
                     >
                         {isLoading ? 'Signing in...' : 'Sign In'}
                     </button>
+
+                    <div className="divider">
+                        <span>OR</span>
+                    </div>
+
+                    <GoogleLoginButton />
                 </form>
 
                 <div className="auth-footer">

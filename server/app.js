@@ -2,6 +2,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const connectDB = require('./config/db');
+const passport = require('./config/passport');
 
 // Load models
 require('./models/User');
@@ -23,6 +24,7 @@ app.use(cors({
     credentials: true
 }));
 app.use(express.json());
+app.use(passport.initialize());
 
 // Routes
 app.get('/', (req, res) => {
